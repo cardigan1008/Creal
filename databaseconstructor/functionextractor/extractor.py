@@ -57,6 +57,8 @@ def extract_one_file(src_file):
         ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f.name} -- -w {CC_ARGS}')
         # --mode rename-global
         ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_f.name} -- -w {CC_ARGS}')
+        # --mode rename-struct
+        ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_f.name} -- -w {CC_ARGS}')
         # --mode extract
         ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f.name} -- -w {CC_ARGS}')
         os.remove(tmp_f.name)

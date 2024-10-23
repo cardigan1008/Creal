@@ -38,7 +38,8 @@ auto typedefMatcher = typedefDecl(
         hasType(realFloatingPointType()),
         hasType(pointsTo(isInteger())),
         hasType(pointsTo(isAnyCharacter())),
-        hasType(pointsTo(realFloatingPointType()))
+        hasType(pointsTo(realFloatingPointType())),
+        hasType(recordType())
     )
 ).bind("typedef");
 
