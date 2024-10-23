@@ -40,14 +40,20 @@ def is_interesting_function(function_text):
     return True
 
 def extract_one_file(src_file):
+    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as tmp_src_file:
+        with open(src_file, 'r') as f:
+            tmp_src_file.write(f.read())
+        tmp_src_file_path = tmp_src_file.name
+
     # --mode rename-struct
-    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {src_file} -- -w {CC_ARGS}')
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-struct
-    ret, structs = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-struct {src_file} -- -w {CC_ARGS}')
+    ret, structs = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     if ret == False:
+        os.remove(tmp_src_file_path)
         return ''
-    # preprocess the file
-    with open(src_file, 'r') as f:
+
+    with open(tmp_src_file_path, 'r') as f:
         prog = SourceProgram(code=f.read(), language=Language.C)
     comp = CompilationSetting(
         compiler=CompilerExe.get_system_clang(),
@@ -58,69 +64,75 @@ def extract_one_file(src_file):
     with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as tmp_f:
         tmp_f.write(pre_prog.get_modified_code())
         tmp_f.close()
-        # --mode process
-        ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode process {tmp_f.name} -- -w {CC_ARGS}')
-        # --mode rename
-        ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f.name} -- -w {CC_ARGS}')
-        # --mode rename-global
-        ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_f.name} -- -w {CC_ARGS}')
-        # --mode extract
-        ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f.name} -- -w {CC_ARGS}')
-        os.remove(tmp_f.name)
-        if ret == False or res == '':
-            return ''
-        extracted_json = {"misc": [], "function": ""}
-        to_replace_typedef_list = []
-        for item in structs.split('\n'):
-            if item.strip() == '':
-                continue
-            item_json = json.loads(item)
-            if "typedef" in item_json:
-                extracted_json["misc"].append(item_json["typedef"] + ';')
-        for item in res.split('\n'):
-            if item.strip() == '':
-                continue
-            item_json = json.loads(item)
-            if "typedef" in item_json:
-                # extracted_json["misc"].append(item_json["typedef"] + ';')
-                matched_typedef = re.findall(r'typedef\s+([\w|\_|\s|\*]+)\s([\w|\_]+)', item_json["typedef"])
-                if len(matched_typedef) > 0:
-                    to_replace_typedef_list.append(matched_typedef[0])
-            elif "global" in item_json:
-                extracted_json["misc"].append(item_json["global"] + ' = ' + str(random.randint(-10, 20)) + ';')
-            else:
-                for key in item_json:
-                    extracted_json[key] = item_json[key]
-        
-        extracted_json["src_file"] = str(src_file)
+        tmp_f_path = tmp_f.name
 
-        if not is_interesting_function(extracted_json["function"]):
-            extracted_json = ''
+    # --mode process
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode process {tmp_f_path} -- -w {CC_ARGS}')
+    # --mode rename
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f_path} -- -w {CC_ARGS}')
+    # --mode rename-global
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_f_path} -- -w {CC_ARGS}')
+    # --mode extract
+    ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f_path} -- -w {CC_ARGS}')
+
+    os.remove(tmp_f_path)
+    os.remove(tmp_src_file_path)
+
+    if ret == False or res == '':
+        return ''
+
+    extracted_json = {"misc": [], "function": ""}
+    to_replace_typedef_list = []
+
+    for item in structs.split('\n'):
+        if item.strip() == '':
+            continue
+        item_json = json.loads(item)
+        if "typedef" in item_json:
+            extracted_json["misc"].append(item_json["typedef"] + ';')
+    for item in res.split('\n'):
+        if item.strip() == '':
+            continue
+        item_json = json.loads(item)
+        if "typedef" in item_json:
+            matched_typedef = re.findall(r'typedef\s+([\w\s\*\_]+)\s([\w\_]+)', item_json["typedef"])
+            if len(matched_typedef) > 0:
+                to_replace_typedef_list.append(matched_typedef[0])
+        elif "global" in item_json:
+            extracted_json["misc"].append(item_json["global"] + ' = ' + str(random.randint(-10, 20)) + ';')
         else:
-            matched_realsmith_name = re.findall(r'(realsmith\_\w+)', extracted_json["function"])
-            if len(matched_realsmith_name) > 0:
-                matched_realsmith_name = matched_realsmith_name[0]
-            else:
-                matched_realsmith_name = 'realsmith_' + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(5))
-            while True:
-                has_type_change = False
-                for type_replace, type_orig in to_replace_typedef_list[::-1]:
-                    for key in extracted_json:
-                        if type(extracted_json[key]) is list:
-                            for i in range(len(extracted_json[key])):
-                                orig_extracted_json_value = deepcopy(extracted_json[key][i])
-                                extracted_json[key][i] = re.sub(r'\b' + type_orig + r'\b', type_replace, extracted_json[key][i])
-                                if orig_extracted_json_value != extracted_json[key][i]:
-                                    has_type_change = True
-                        else:
-                            orig_extracted_json_value = deepcopy(extracted_json[key])
-                            extracted_json[key] = re.sub(r'\b' + type_orig + r'\b', type_replace, extracted_json[key])
-                            if orig_extracted_json_value != extracted_json[key]:
-                                has_type_change = True
-                if not has_type_change:
-                    break
+            for key in item_json:
+                extracted_json[key] = item_json[key]
+    
+    extracted_json["src_file"] = str(src_file)
 
-        return extracted_json
+    if not is_interesting_function(extracted_json["function"]):
+        extracted_json = ''
+    else:
+        matched_realsmith_name = re.findall(r'(realsmith\_\w+)', extracted_json["function"])
+        if len(matched_realsmith_name) > 0:
+            matched_realsmith_name = matched_realsmith_name[0]
+        else:
+            matched_realsmith_name = 'realsmith_' + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(5))
+        while True:
+            has_type_change = False
+            for type_replace, type_orig in to_replace_typedef_list[::-1]:
+                for key in extracted_json:
+                    if type(extracted_json[key]) is list:
+                        for i in range(len(extracted_json[key])):
+                            orig_extracted_json_value = deepcopy(extracted_json[key][i])
+                            extracted_json[key][i] = re.sub(r'\b' + type_orig + r'\b', type_replace, extracted_json[key][i])
+                            if orig_extracted_json_value != extracted_json[key][i]:
+                                has_type_change = True
+                    else:
+                        orig_extracted_json_value = deepcopy(extracted_json[key])
+                        extracted_json[key] = re.sub(r'\b' + type_orig + r'\b', type_replace, extracted_json[key])
+                        if orig_extracted_json_value != extracted_json[key]:
+                            has_type_change = True
+            if not has_type_change:
+                break
+
+    return extracted_json
 
 if __name__=='__main__':
 
