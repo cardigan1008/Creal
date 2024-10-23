@@ -26,8 +26,7 @@ auto functionMatcher = functionDecl(
         ))))),
       unless(hasDescendant(parmVarDecl()))
     ),
-    unless(hasDescendant(declRefExpr(to(varDecl(unless(anyOf(hasLocalStorage(), hasType(isInteger())))))))),
-    unless(hasDescendant(invocation()))
+    unless(hasDescendant(declRefExpr(to(varDecl(unless(anyOf(hasLocalStorage(), hasType(isInteger()))))))))
     ).bind("function");
 
 auto typedefMatcher = typedefDecl(
@@ -39,7 +38,7 @@ auto typedefMatcher = typedefDecl(
         hasType(pointsTo(isInteger())),
         hasType(pointsTo(isAnyCharacter())),
         hasType(pointsTo(realFloatingPointType())),
-        hasType(recordType())
+        hasType(elaboratedType())
     )
 ).bind("typedef");
 
