@@ -8,6 +8,8 @@ add_library(FunctionExtractorLib
     RenameFunction.cpp
     RenameGlobal.cpp
     RenameStruct.cpp
+    StructExtractor.cpp
+    StructPrinter.cpp
 )
 target_include_directories(FunctionExtractorLib PUBLIC ${CLANG_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 

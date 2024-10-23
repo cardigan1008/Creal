@@ -13,6 +13,7 @@
 #include "RenameFunction.hpp"
 #include "RenameGlobal.hpp"
 #include "RenameStruct.hpp"
+#include "StructExtractor.hpp"
 
 using namespace llvm;
 using namespace clang;
@@ -21,13 +22,15 @@ using namespace clang::ast_matchers;
 
 namespace {
 
-enum class ToolMode { Extract, Process, Rename, RenameGlobal, RenameStruct};
+enum class ToolMode { ExtractStruct, Extract, Process, Rename, RenameGlobal, RenameStruct};
 
 cl::OptionCategory ToolOptions("options");
 
 cl::opt<ToolMode>
     Mode("mode", cl::desc("Target functions to be extracted."),
-         cl::values(clEnumValN(ToolMode::Extract, "extract",
+         cl::values(clEnumValN(ToolMode::ExtractStruct, "extract-struct",
+                               "Extract typedef struct declarations."),
+                    clEnumValN(ToolMode::Extract, "extract",
                                "Extract functions with nemeric input args, return type, no external function calls, and no global accesses."
                                "The default mode."),
                     clEnumValN(ToolMode::Process, "process",
@@ -80,6 +83,9 @@ template <typename InstrTool> int runToolOnCode(RefactoringTool &Tool) {
     if (std::is_same<InstrTool, extractor::FunctionExtractor>::value) {
         return Ret;
     }
+    if (std::is_same<InstrTool, extractor::StructExtractor>::value) {
+        return Ret;
+    }
     if (!Ret)
         if (!applyReplacements(Tool)) {
             llvm::errs() << "Failed to overwrite the input files.\n";
@@ -105,8 +111,14 @@ int main(int argc, const char **argv) {
     const auto &Files = OptionsParser.getSourcePathList();
     RefactoringTool Tool(Compilations, Files);
     int Result = 0;
-
-    if (Mode == ToolMode::Extract) {
+    
+    if (Mode == ToolMode::ExtractStruct) {
+        Result = runToolOnCode<extractor::StructExtractor>(Tool);
+        if (Result) {
+            llvm::errs() << "Something went wrong...\n";
+            return Result;
+        }
+    } else if (Mode == ToolMode::Extract) {
         Result = runToolOnCode<extractor::FunctionExtractor>(Tool);
         if (Result) {
             llvm::errs() << "Something went wrong...\n";

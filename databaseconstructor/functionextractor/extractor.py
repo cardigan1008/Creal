@@ -40,6 +40,12 @@ def is_interesting_function(function_text):
     return True
 
 def extract_one_file(src_file):
+    # --mode rename-struct
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {src_file} -- -w {CC_ARGS}')
+    # --mode extract-struct
+    ret, structs = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-struct {src_file} -- -w {CC_ARGS}')
+    if ret == False:
+        return ''
     # preprocess the file
     with open(src_file, 'r') as f:
         prog = SourceProgram(code=f.read(), language=Language.C)
@@ -48,6 +54,7 @@ def extract_one_file(src_file):
         opt_level=OptLevel.O0,
     )
     pre_prog = comp.preprocess_program(prog)
+
     with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as tmp_f:
         tmp_f.write(pre_prog.get_modified_code())
         tmp_f.close()
@@ -57,8 +64,6 @@ def extract_one_file(src_file):
         ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f.name} -- -w {CC_ARGS}')
         # --mode rename-global
         ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_f.name} -- -w {CC_ARGS}')
-        # --mode rename-struct
-        ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_f.name} -- -w {CC_ARGS}')
         # --mode extract
         ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f.name} -- -w {CC_ARGS}')
         os.remove(tmp_f.name)
@@ -66,6 +71,12 @@ def extract_one_file(src_file):
             return ''
         extracted_json = {"misc": [], "function": ""}
         to_replace_typedef_list = []
+        for item in structs.split('\n'):
+            if item.strip() == '':
+                continue
+            item_json = json.loads(item)
+            if "typedef" in item_json:
+                extracted_json["misc"].append(item_json["typedef"] + ';')
         for item in res.split('\n'):
             if item.strip() == '':
                 continue
