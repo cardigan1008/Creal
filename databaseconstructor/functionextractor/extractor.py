@@ -45,6 +45,8 @@ def extract_one_file(src_file):
             tmp_src_file.write(f.read())
         tmp_src_file_path = tmp_src_file.name
 
+    # --mode extract-headers
+    ret, headers = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-header {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode rename-struct
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-struct
@@ -84,6 +86,12 @@ def extract_one_file(src_file):
     extracted_json = {"misc": [], "function": ""}
     to_replace_typedef_list = []
 
+    for item in headers.split('\n'):
+        if item.strip() == '':
+            continue
+        item_json = json.loads(item)
+        if "include" in item_json:
+            extracted_json["misc"].append("#include" + " \"" + item_json["include"] + "\"")
     for item in structs.split('\n'):
         if item.strip() == '':
             continue
