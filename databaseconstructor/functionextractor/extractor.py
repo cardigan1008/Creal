@@ -99,7 +99,10 @@ def extract_one_file(src_file):
             if len(matched_typedef) > 0:
                 to_replace_typedef_list.append(matched_typedef[0])
         elif "global" in item_json:
-            extracted_json["misc"].append(item_json["global"] + ' = ' + str(random.randint(-10, 20)) + ';')
+            if "struct" not in item_json["global"]:
+                extracted_json["misc"].append(item_json["global"] + ' = ' + str(random.randint(-10, 20)) + ';')
+            else:
+                extracted_json["misc"].append(item_json["global"] + ';')
         else:
             for key in item_json:
                 extracted_json[key] = item_json[key]

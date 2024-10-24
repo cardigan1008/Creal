@@ -26,7 +26,7 @@ auto functionMatcher = functionDecl(
         ))))),
       unless(hasDescendant(parmVarDecl()))
     ),
-    unless(hasDescendant(declRefExpr(to(varDecl(unless(anyOf(hasLocalStorage(), hasType(isInteger()))))))))
+    unless(hasDescendant(declRefExpr(to(varDecl(unless(anyOf(hasLocalStorage(), hasType(isInteger()), hasType(recordType()))))))))
     ).bind("function");
 
 auto typedefMatcher = typedefDecl(
@@ -51,7 +51,8 @@ auto globalDeclMatcher = varDecl(
         hasType(realFloatingPointType()),
         hasType(pointsTo(isInteger())),
         hasType(pointsTo(isAnyCharacter())),
-        hasType(pointsTo(realFloatingPointType()))
+        hasType(pointsTo(realFloatingPointType())),
+        hasType(recordDecl())
     )
 ).bind("globalDecl");
 
