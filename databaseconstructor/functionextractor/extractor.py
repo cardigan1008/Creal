@@ -78,7 +78,6 @@ def extract_one_file(src_file):
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f_path} -- -w {CC_ARGS}')
     # --mode extract
     ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f_path} -- -w {CC_ARGS}')
-    print(ret)
 
     os.remove(tmp_f_path)
     os.remove(tmp_src_file_path)
