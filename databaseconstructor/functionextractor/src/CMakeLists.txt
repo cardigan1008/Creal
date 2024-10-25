@@ -8,6 +8,7 @@ add_library(FunctionExtractorLib
     RenameFunction.cpp
     RenameGlobal.cpp
     RenameStruct.cpp
+    RenameVar.cpp
     StructExtractor.cpp
     StructPrinter.cpp
     HeaderExtractor.cpp

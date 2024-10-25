@@ -13,6 +13,7 @@
 #include "RenameFunction.hpp"
 #include "RenameGlobal.hpp"
 #include "RenameStruct.hpp"
+#include "RenameVar.hpp"
 #include "StructExtractor.hpp"
 #include "HeaderExtractor.hpp"
 #include "HeaderExtractorActionFactory.hpp"
@@ -24,7 +25,7 @@ using namespace clang::ast_matchers;
 
 namespace {
 
-enum class ToolMode { ExtractHeader, ExtractStruct, Extract, Process, Rename, RenameGlobal, RenameStruct};
+enum class ToolMode { ExtractHeader, ExtractStruct, Extract, Process, Rename, RenameGlobal, RenameStruct, RenameVar };
 
 cl::OptionCategory ToolOptions("options");
 
@@ -44,7 +45,9 @@ cl::opt<ToolMode>
                     clEnumValN(ToolMode::RenameGlobal, "rename-global",
                                "Rename global variables."),
                     clEnumValN(ToolMode::RenameStruct, "rename-struct",
-                                 "Rename struct name.")
+                                 "Rename struct name."),
+                    clEnumValN(ToolMode::RenameVar, "rename-var",
+                                    "Rename local variables.")
                                ),
          cl::init(ToolMode::Extract),
          cl::cat(ToolOptions));
@@ -156,6 +159,12 @@ int main(int argc, const char **argv) {
         }
     } else if (Mode == ToolMode::RenameStruct) {
         Result = runToolOnCode<process::RenameStruct>(Tool);
+        if (Result) {
+            llvm::errs() << "Something went wrong...\n";
+            return Result;
+        }
+    } else if (Mode == ToolMode::RenameVar) {
+        Result = runToolOnCode<process::RenameVar>(Tool);
         if (Result) {
             llvm::errs() << "Something went wrong...\n";
             return Result;

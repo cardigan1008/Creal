@@ -45,6 +45,10 @@ def extract_one_file(src_file):
             tmp_src_file.write(f.read())
         tmp_src_file_path = tmp_src_file.name
 
+    # --mode rename-global
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_src_file_path} -- -w {CC_ARGS}')
+    # --mode rename-var
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-var {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-headers
     ret, headers = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-header {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode rename-struct
@@ -72,10 +76,9 @@ def extract_one_file(src_file):
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode process {tmp_f_path} -- -w {CC_ARGS}')
     # --mode rename
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename {tmp_f_path} -- -w {CC_ARGS}')
-    # --mode rename-global
-    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_f_path} -- -w {CC_ARGS}')
     # --mode extract
     ret, res = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract {tmp_f_path} -- -w {CC_ARGS}')
+    print(ret)
 
     os.remove(tmp_f_path)
     os.remove(tmp_src_file_path)
