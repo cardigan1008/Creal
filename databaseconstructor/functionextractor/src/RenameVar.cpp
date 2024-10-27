@@ -44,6 +44,24 @@ clang::transformer::RewriteRule processRenameVarRefRule() {
     });
 }
 
+/* Rename local struct name */
+clang::transformer::RewriteRule processRenameStructRule() {
+    auto structDeclMatcher = recordDecl(
+        isExpansionInMainFile(),
+        hasAncestor(translationUnitDecl(
+            hasDescendant(
+                functionDecl(
+                    isExpansionInMainFile(),
+                    isDefinition()
+                ).bind("function")
+            )
+        ))).bind("structDecl");
+    
+    return makeRule(structDeclMatcher, {
+        insertAfter(name("structDecl"), cat("_", name("function"))),
+    });
+}
+
 } // namespace process
 
 process::RenameVar::RenameVar(
@@ -53,6 +71,8 @@ process::RenameVar::RenameVar(
             processRenameVarRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
             processRenameVarRefRule(), FileToReplacements, FileToNumberValueTrackers});
+        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+            processRenameStructRule(), FileToReplacements, FileToNumberValueTrackers});
     }
 
 void process::RenameVar::registerMatchers(clang::ast_matchers::MatchFinder &Finder) {
