@@ -62,6 +62,46 @@ clang::transformer::RewriteRule processRenameStructRule() {
     });
 }
 
+/* Rename filed of struct */
+clang::transformer::RewriteRule processRenameStructFieldRule() {
+    auto fieldDeclMatcher = fieldDecl(
+        isExpansionInMainFile(),
+        hasAncestor(recordDecl(
+            isExpansionInMainFile(),
+            hasAncestor(translationUnitDecl(
+                hasDescendant(
+                    functionDecl(
+                        isExpansionInMainFile(),
+                        isDefinition()
+                    ).bind("function")
+                )
+            ))
+        ))).bind("fieldDecl");
+
+    return makeRule(fieldDeclMatcher, {
+        insertAfter(name("fieldDecl"), cat("_", name("function"))),
+    });
+}
+
+/* Rename ref of struct field */
+clang::transformer::RewriteRule processRenameStructFieldRefRule() {
+    auto fieldRefMatcher = memberExpr(
+        isExpansionInMainFile(),
+        hasAncestor(translationUnitDecl(
+            hasDescendant(
+                functionDecl(
+                    isExpansionInMainFile(),
+                    isDefinition()
+                ).bind("function")
+            )
+        ))
+    ).bind("fieldRef");
+
+    return makeRule(fieldRefMatcher, {
+        insertAfter(node("fieldRef"), cat("_", name("function"))),
+    });
+}
+
 } // namespace process
 
 process::RenameVar::RenameVar(
@@ -73,6 +113,10 @@ process::RenameVar::RenameVar(
             processRenameVarRefRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
             processRenameStructRule(), FileToReplacements, FileToNumberValueTrackers});
+        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+            processRenameStructFieldRule(), FileToReplacements, FileToNumberValueTrackers});
+        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+            processRenameStructFieldRefRule(), FileToReplacements, FileToNumberValueTrackers});
     }
 
 void process::RenameVar::registerMatchers(clang::ast_matchers::MatchFinder &Finder) {
