@@ -44,23 +44,23 @@ clang::transformer::RewriteRule processRenameVarRefRule() {
     });
 }
 
-/* Rename local struct name */
-clang::transformer::RewriteRule processRenameStructRule() {
-    auto structDeclMatcher = recordDecl(
-        isExpansionInMainFile(),
-        hasAncestor(translationUnitDecl(
-            hasDescendant(
-                functionDecl(
-                    isExpansionInMainFile(),
-                    isDefinition()
-                ).bind("function")
-            )
-        ))).bind("structDecl");
+// /* Rename local struct name */
+// clang::transformer::RewriteRule processRenameStructRule() {
+//     auto structDeclMatcher = recordDecl(
+//         isExpansionInMainFile(),
+//         hasAncestor(translationUnitDecl(
+//             hasDescendant(
+//                 functionDecl(
+//                     isExpansionInMainFile(),
+//                     isDefinition()
+//                 ).bind("function")
+//             )
+//         ))).bind("structDecl");
     
-    return makeRule(structDeclMatcher, {
-        insertAfter(name("structDecl"), cat("_", name("function"))),
-    });
-}
+//     return makeRule(structDeclMatcher, {
+//         insertAfter(name("structDecl"), cat("_", name("function"))),
+//     });
+// }
 
 /* Rename filed of struct */
 clang::transformer::RewriteRule processRenameStructFieldRule() {
@@ -111,8 +111,8 @@ process::RenameVar::RenameVar(
             processRenameVarRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
             processRenameVarRefRule(), FileToReplacements, FileToNumberValueTrackers});
-        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
-            processRenameStructRule(), FileToReplacements, FileToNumberValueTrackers});
+        // ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+        //     processRenameStructRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
             processRenameStructFieldRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{

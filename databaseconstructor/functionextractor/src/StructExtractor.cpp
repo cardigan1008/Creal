@@ -9,10 +9,16 @@
 namespace extractor
 {
 
-auto structMatcher = typedefDecl(
+auto typedefStructMatcher = typedefDecl(
     isExpansionInMainFile(),
     hasType(elaboratedType())
 ).bind("typedef");
+
+auto structMatcher = recordDecl(
+    isExpansionInMainFile(),
+    unless(hasParent(recordDecl())),
+    isDefinition()
+).bind("struct");
 
 } // namespace extractor
 
@@ -21,5 +27,6 @@ extractor::StructExtractor::StructExtractor(
     : FileToReplacements{FileToReplacements} {}
 
 void extractor::StructExtractor::registerMatchers(clang::ast_matchers::MatchFinder &Finder) {
+    Finder.addMatcher(typedefStructMatcher, &Printer);
     Finder.addMatcher(structMatcher, &Printer);
 }

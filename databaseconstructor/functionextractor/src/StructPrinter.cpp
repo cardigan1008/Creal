@@ -35,6 +35,14 @@ void StructPrinter::run(const clang::ast_matchers::MatchFinder::MatchResult &Res
             }
         }
     }
+
+    if (const auto *F = Result.Nodes.getNodeAs<clang::RecordDecl>("struct")) {
+        if (F->isStruct()) {
+            const auto &SM = *Result.SourceManager;
+            J["struct"] = getStructAsText(F, *Result.SourceManager, Result.Context->getLangOpts());
+            std::cout << J << '\n';
+        }
+    }
 }
 
 

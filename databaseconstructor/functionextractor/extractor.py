@@ -47,12 +47,12 @@ def extract_one_file(src_file):
 
     # --mode rename-global
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-global {tmp_src_file_path} -- -w {CC_ARGS}')
+    # --mode rename-struct
+    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode rename-var
     ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-var {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-headers
     ret, headers = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-header {tmp_src_file_path} -- -w {CC_ARGS}')
-    # --mode rename-struct
-    ret, _ = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode rename-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-struct
     ret, structs = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-struct {tmp_src_file_path} -- -w {CC_ARGS}')
     if ret == False:
@@ -100,6 +100,8 @@ def extract_one_file(src_file):
         item_json = json.loads(item)
         if "typedef" in item_json:
             extracted_json["misc"].append(item_json["typedef"] + ';')
+        elif "struct" in item_json:
+            extracted_json["misc"].append(item_json["struct"] + ';')
     for item in res.split('\n'):
         if item.strip() == '':
             continue
