@@ -25,8 +25,7 @@ auto functionMatcher = functionDecl(
         hasType(pointsTo(isAnyCharacter()))
         ))))),
       unless(hasDescendant(parmVarDecl()))
-    ),
-    unless(hasDescendant(declRefExpr(to(varDecl(unless(anyOf(hasLocalStorage(), hasType(isInteger()), hasType(recordType()))))))))
+    )
     ).bind("function");
 
 auto typedefMatcher = typedefDecl(
