@@ -40,7 +40,10 @@ clang::transformer::RewriteRule processRenameTypedefStructRefRule(const std::str
 clang::transformer::RewriteRule processRenameStructName(const std::string& randomSuffix) {
     auto structDeclMatcher = recordDecl(
         isExpansionInMainFile(),
-        isDefinition()
+        isDefinition(),
+        unless(
+            hasName("(anonymous)")
+        )
     ).bind("structDecl");
     
     return makeRule(structDeclMatcher, {
@@ -53,7 +56,10 @@ clang::transformer::RewriteRule processRenameStructRefName(const std::string& ra
         loc(recordType(
             hasDeclaration(
                 recordDecl(
-                    isExpansionInMainFile()
+                    isExpansionInMainFile(),
+                    unless(
+                        hasName("(anonymous)")
+                    )
                 ).bind("structDecl")
             )
         ))
