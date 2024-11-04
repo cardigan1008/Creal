@@ -17,7 +17,10 @@ auto typedefStructMatcher = typedefDecl(
 auto structMatcher = recordDecl(
     isExpansionInMainFile(),
     unless(hasParent(recordDecl())),
-    isDefinition()
+    isDefinition(),
+    unless(
+        hasName("(anonymous)")
+    )
 ).bind("struct");
 
 } // namespace extractor
