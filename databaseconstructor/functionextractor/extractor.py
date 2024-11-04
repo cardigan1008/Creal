@@ -55,7 +55,6 @@ def extract_one_file(src_file):
     ret, headers = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-header {tmp_src_file_path} -- -w {CC_ARGS}')
     # --mode extract-struct
     ret, structs = run_cmd(f'{FUNCTION_EXTRACTOR_PATH} --mode extract-struct {tmp_src_file_path} -- -w {CC_ARGS}')
-    print(structs)
     if ret == False:
         os.remove(tmp_src_file_path)
         return ''
