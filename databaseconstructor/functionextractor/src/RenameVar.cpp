@@ -102,6 +102,52 @@ clang::transformer::RewriteRule processRenameStructFieldRefRule() {
     });
 }
 
+/* Rename enum field */
+clang::transformer::RewriteRule processRenameEnumFieldRule() {
+    auto enumConstantDeclMatcher = enumConstantDecl(
+        isExpansionInMainFile(),
+        hasAncestor(enumDecl(
+            isExpansionInMainFile(),
+            hasAncestor(translationUnitDecl(
+                hasDescendant(
+                    functionDecl(
+                        isExpansionInMainFile(),
+                        isDefinition()
+                    ).bind("function")
+                )
+            ))
+        ))
+    ).bind("enumConstantDecl");
+
+    return makeRule(enumConstantDeclMatcher, {
+        insertAfter(name("enumConstantDecl"), cat("_", name("function"))),
+    });
+}
+
+/* Rename enum field reference */
+clang::transformer::RewriteRule processRenameEnumFieldRefRule() {
+    auto enumConstantRefMatcher = declRefExpr(
+        isExpansionInMainFile(),
+        to(enumConstantDecl(
+            hasAncestor(enumDecl(
+                isExpansionInMainFile(),
+                hasAncestor(translationUnitDecl(
+                    hasDescendant(
+                        functionDecl(
+                            isExpansionInMainFile(),
+                            isDefinition()
+                        ).bind("function")
+                    )
+                ))
+            ))
+        ))
+    ).bind("enumConstantRef");
+
+    return makeRule(enumConstantRefMatcher, {
+        insertAfter(node("enumConstantRef"), cat("_", name("function"))),
+    });
+}
+
 } // namespace process
 
 process::RenameVar::RenameVar(
@@ -117,6 +163,10 @@ process::RenameVar::RenameVar(
             processRenameStructFieldRule(), FileToReplacements, FileToNumberValueTrackers});
         ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
             processRenameStructFieldRefRule(), FileToReplacements, FileToNumberValueTrackers});
+        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+            processRenameEnumFieldRule(), FileToReplacements, FileToNumberValueTrackers});
+        ruleCallbacks.emplace_back(ruleactioncallback::RuleActionCallback{
+            processRenameEnumFieldRefRule(), FileToReplacements, FileToNumberValueTrackers});
     }
 
 void process::RenameVar::registerMatchers(clang::ast_matchers::MatchFinder &Finder) {
